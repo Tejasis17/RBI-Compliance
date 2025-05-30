@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBI Organizational Structure Mind Map</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(90deg, #1a3a8f, #0a1f4d);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        
+        .header p {
+            margin: 10px 0 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        #mindmap {
+            width: 100%;
+            height: 80vh;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        .node circle {
+            stroke-width: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .node text {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1.5px;
+            stroke-dasharray: 3, 3;
+        }
+        
+        .node:hover circle {
+            stroke-width: 3px;
+            filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.2));
+        }
+        
+        .tooltip {
+            position: absolute;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            pointer-events: none;
+            font-size: 14px;
+            max-width: 300px;
+            line-height: 1.4;
+            border: 1px solid #e0e0e0;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .tooltip h3 {
+            margin: 0 0 8px 0;
+            color: #1a3a8f;
+            font-size: 16px;
+        }
+        
+        .tooltip p {
+            margin: 0;
+            color: #555;
+        }
+        
+        .legend {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: linear-gradient(90deg, #1a3a8f, #0a1f4d);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            #mindmap {
+                height: 70vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Reserve Bank of India Organizational Structure</h1>
+        <p>Interactive Mind Map of RBI Departments and Their Functions</p>
+    </div>
+    
+    <div class="controls">
+        <button id="zoomIn">Zoom In</button>
+        <button id="zoomOut">Zoom Out</button>
+        <button id="reset">Reset View</button>
+        <button id="expandAll">Expand All</button>
+        <button id="collapseAll">Collapse All</button>
+    </div>
+    
+    <div id="mindmap"></div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #1a3a8f;"></div>
+            <span>Central Bank</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #4e79a7;"></div>
+            <span>Core Departments</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #f28e2b;"></div>
+            <span>Supervisory Departments</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #e15759;"></div>
+            <span>Regulatory Departments</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #76b7b2;"></div>
+            <span>Support Departments</span>
+        </div>
+    </div>
+    
+    <div class="tooltip"></div>
+    
+    <script>
+        // Data for RBI organizational structure
+        const rbiData = {
+            name: "Reserve Bank of India",
+            description: "India's central banking institution responsible for monetary policy, currency issuance, and financial system regulation.",
+            color: "#1a3a8f",
+            children: [
+                {
+                    name: "Governor",
+                    description: "Chief executive officer responsible for overall management and policy decisions.",
+                    color: "#1a3a8f"
+                },
+                {
+                    name: "Deputy Governors",
+                    description: "Four deputy governors overseeing different functional areas of the bank.",
+                    color: "#1a3a8f",
+                    children: [
+                        {
+                            name: "Monetary Policy",
+                            description: "Formulates and implements monetary policy to maintain price stability.",
+                            color: "#4e79a7"
+                        },
+                        {
+                            name: "Banking Regulation",
+                            description: "Regulates and supervises banking institutions in India.",
+                            color: "#e15759"
+                        },
+                        {
+                            name: "Financial Markets",
+                            description: "Oversees foreign exchange and money markets operations.",
+                            color: "#4e79a7"
+                        },
+                        {
+                            name: "Payment Systems",
+                            description: "Regulates payment and settlement systems in the country.",
+                            color: "#e15759"
+                        }
+                    ]
+                },
+                {
+                    name: "Central Board",
+                    description: "The main governing body of RBI comprising official and non-official directors.",
+                    color: "#1a3a8f"
+                },
+                {
+                    name: "Departments",
+                    description: "Functional departments handling specialized areas of central banking.",
+                    color: "#1a3a8f",
+                    children: [
+                        {
+                            name: "Department of Supervision",
+                            description: "Supervises banks and financial institutions for financial stability.",
+                            color: "#f28e2b",
+                            children: [
+                                {
+                                    name: "Banking Supervision",
+                                    description: "Oversees commercial banks' operations and risk management.",
+                                    color: "#f28e2b"
+                                },
+                                {
+                                    name: "Non-Banking Supervision",
+                                    description: "Regulates NBFCs (Non-Banking Financial Companies).",
+                                    color: "#f28e2b"
+                                }
+                            ]
+                        },
+                        {
+                            name: "Department of Regulation",
+                            description: "Develops regulatory frameworks for financial institutions.",
+                            color: "#e15759",
+                            children: [
+                                {
+                                    name: "Prudential Regulation",
+                                    description: "Sets capital adequacy and risk management norms.",
+                                    color: "#e15759"
+                                },
+                                {
+                                    name: "Conduct Regulation",
+                                    description: "Ensures fair practices and consumer protection.",
+                                    color: "#e15759"
+                                }
+                            ]
+                        },
+                        {
+                            name: "Financial Inclusion & Development (FIDD)",
+                            description: "Promotes financial inclusion and development initiatives.",
+                            color: "#76b7b2",
+                            children: [
+                                {
+                                    name: "Financial Literacy",
+                                    description: "Develops programs to enhance financial awareness.",
+                                    color: "#76b7b2"
+                                },
+                                {
+                                    name: "Rural Planning",
+                                    description: "Focuses on banking services in rural areas.",
+                                    color: "#76b7b2"
+                                }
+                            ]
+                        },
+                        {
+                            name: "Consumer Education & Protection (CEPD)",
+                            description: "Protects consumer interests in financial services.",
+                            color: "#76b7b2",
+                            children: [
+                                {
+                                    name: "Grievance Redressal",
+                                    description: "Handles consumer complaints against banks.",
+                                    color: "#76b7b2"
+                                },
+                                {
+                                    name: "Awareness Programs",
+                                    description: "Conducts consumer education initiatives.",
+                                    color: "#76b7b2"
+                                }
+                            ]
+                        },
+                        {
+                            name: "Department of Payment Systems",
+                            description: "Regulates and oversees payment and settlement systems.",
+                            color: "#e15759",
+                            children: [
+                                {
+                                    name: "Digital Payments",
+                                    description: "Oversees UPI, NEFT, RTGS and other digital systems.",
+                                    color: "#e15759"
+                                },
+                                {
+                                    name: "Card Payments",
+                                    description: "Regulates credit/debit card operations.",
+                                    color: "#e15759"
+                                }
+                            ]
+                        },
+                        {
+                            name: "Foreign Exchange Department",
+                            description: "Manages foreign exchange reserves and external trade.",
+                            color: "#4e79a7",
+                            children: [
+                                {
+                                    name: "Forex Management",
+                                    description: "Manages India's foreign exchange reserves.",
+                                    color: "#4e79a7"
+                                },
+                                {
+                                    name: "External Trade",
+                                    description: "Regulates forex transactions for trade.",
+                                    color: "#4e79a7"
+                                }
+                            ]
+                        },
+                        {
+                            name: "FinTech Department",
+                            description: "Regulates financial technology innovations and startups.",
+                            color: "#f28e2b",
+                            children: [
+                                {
+                                    name: "Digital Lending",
+                                    description: "Oversees digital lending platforms and regulations.",
+                                    color: "#f28e2b"
+                                },
+                                {
+                                    name: "Blockchain",
+                                    description: "Monitors blockchain applications in finance.",
+                                    color: "#f28e2b"
+                                }
+                            ]
+                        },
+                        {
+                            name: "Department of Economic Policy",
+                            description: "Conducts economic research and analysis for policy formulation.",
+                            color: "#4e79a7",
+                            children: [
+                                {
+                                    name: "Monetary Research",
+                                    description: "Analyzes monetary policy impacts.",
+                                    color: "#4e79a7"
+                                },
+                                {
+                                    name: "Economic Modeling",
+                                    description: "Develops economic models for forecasting.",
+                                    color: "#4e79a7"
+                                }
+                            ]
+                        },
+                        {
+                            name: "Department of Currency Management",
+                            description: "Responsible for currency note issuance and circulation.",
+                            color: "#76b7b2",
+                            children: [
+                                {
+                                    name: "Note Issue",
+                                    description: "Manages printing and distribution of currency.",
+                                    color: "#76b7b2"
+                                },
+                                {
+                                    name: "Currency Verification",
+                                    description: "Ensures quality of currency in circulation.",
+                                    color: "#76b7b2"
+                                }
+                            ]
+                        },
+                        {
+                            name: "Department of Information Technology",
+                            description: "Manages IT infrastructure and cybersecurity for RBI.",
+                            color: "#76b7b2",
+                            children: [
+                                {
+                                    name: "Cybersecurity",
+                                    description: "Implements security measures for banking systems.",
+                                    color: "#76b7b2"
+                                },
+                                {
+                                    name: "Digital Infrastructure",
+                                    description: "Maintains RBI's IT systems and networks.",
+                                    color: "#76b7b2"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "Regional Offices",
+                    description: "31 regional offices across India for decentralized operations.",
+                    color: "#1a3a8f"
+                },
+                {
+                    name: "Training Institutions",
+                    description: "Includes RBI Academy and colleges for banking education.",
+                    color: "#1a3a8f",
+                    children: [
+                        {
+                            name: "RBI Academy",
+                            description: "Training center for RBI staff and banking professionals.",
+                            color: "#76b7b2"
+                        },
+                        {
+                            name: "College of Agricultural Banking",
+                            description: "Focuses on rural and agricultural banking education.",
+                            color: "#76b7b2"
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // Set up the SVG container
+        const margin = {top: 50, right: 120, bottom: 50, left: 120};
+        const width = document.getElementById('mindmap').clientWidth - margin.left - margin.right;
+        const height = document.getElementById('mindmap').clientHeight - margin.top - margin.bottom;
+
+        const svg = d3.select("#mindmap")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Create a cluster layout
+        const cluster = d3.cluster()
+            .size([width, height]);
+
+        // Assign data to hierarchy
+        const root = d3.hierarchy(rbiData);
+        cluster(root);
+
+        // Add links between nodes
+        svg.selectAll(".link")
+            .data(root.links())
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", d3.linkVertical()
+                .x(d => d.x)
+                .y(d => d.y));
+
+        // Create node groups
+        const node = svg.selectAll(".node")
+            .data(root.descendants())
+            .enter().append("g")
+            .attr("class", d => "node" + (d.children ? " node--internal" : " node--leaf"))
+            .attr("transform", d => `translate(${d.x},${d.y})`)
+            .on("click", toggleChildren)
+            .on("mouseover", showTooltip)
+            .on("mouseout", hideTooltip);
+
+        // Add circles to nodes
+        node.append("circle")
+            .attr("r", d => d.data.name === "Reserve Bank of India" ? 20 : 10)
+            .attr("fill", d => d.data.color || "#1a3a8f")
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 2);
+
+        // Add text labels
+        node.append("text")
+            .attr("dy", d => d.data.name === "Reserve Bank of India" ? -25 : (d.children ? -15 : 15))
+            .attr("dx", d => d.children ? (d.data.name === "Reserve Bank of India" ? 0 : -15) : 15)
+            .style("text-anchor", d => d.children ? "end" : "start")
+            .text(d => d.data.name)
+            .attr("font-size", d => d.data.name === "Reserve Bank of India" ? "16px" : "12px")
+            .attr("font-weight", d => d.data.name === "Reserve Bank of India" ? "bold" : "normal");
+
+        // Zoom and pan functionality
+        const zoom = d3.zoom()
+            .scaleExtent([0.5, 2])
+            .on("zoom", (event) => {
+                svg.attr("transform", event.transform);
+            });
+
+        d3.select("svg").call(zoom);
+
+        // Button controls
+        document.getElementById("zoomIn").addEventListener("click", () => {
+            d3.select("svg").transition().call(zoom.scaleBy, 1.2);
+        });
+
+        document.getElementById("zoomOut").addEventListener("click", () => {
+            d3.select("svg").transition().call(zoom.scaleBy, 0.8);
+        });
+
+        document.getElementById("reset").addEventListener("click", () => {
+            d3.select("svg").transition().call(zoom.transform, d3.zoomIdentity);
+        });
+
+        document.getElementById("expandAll").addEventListener("click", () => {
+            root.each(d => {
+                if (d.children) {
+                    d._children = null;
+                    d.children = d._children || null;
+                }
+            });
+            update();
+        });
+
+        document.getElementById("collapseAll").addEventListener("click", () => {
+            root.each(d => {
+                if (d.children && d.depth > 0) {
+                    d._children = d.children;
+                    d.children = null;
+                }
+            });
+            update();
+        });
+
+        // Tooltip functions
+        const tooltip = d3.select(".tooltip");
+
+        function showTooltip(event, d) {
+            tooltip.transition()
+                .duration(200)
+                .style("opacity", 0.9);
+            
+            tooltip.html(`
+                <h3>${d.data.name}</h3>
+                <p>${d.data.description}</p>
+            `)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        }
+
+        function hideTooltip() {
+            tooltip.transition()
+                .duration(500)
+                .style("
